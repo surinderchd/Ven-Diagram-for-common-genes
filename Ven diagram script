@@ -1,0 +1,48 @@
+
+library(dplyr)
+
+# Load the two CSV files and move row names (gene names) to a column
+file1 <- read.csv('', row.names = 1)
+file2 <- read.csv('', row.names = 1)
+
+# Create a new column 'gene' from the row names
+file1 <- file1 %>% mutate(gene = rownames(file1))
+file2 <- file2 %>% mutate(gene = rownames(file2))
+
+# Filter rows where padj is below 0.05
+file1 <- file1 %>% filter(padj < 0.05)
+file2 <- file2 %>% filter(padj < 0.05)
+
+# Find common genes (using inner_join)
+common_genes <- inner_join(file1, file2, by = "gene", suffix = c("_file1", "_file2"))
+
+# Find genes unique to the first file (using anti_join)
+unique_file1 <- anti_join(file1, file2, by = "gene")
+
+# Find genes unique to the second file (using anti_join)
+unique_file2 <- anti_join(file2, file1, by = "gene")
+
+# Write the results to new CSV files
+write.csv(common_genes, 'common_genes.csv', row.names = FALSE)
+write.csv(unique_file1, 'unique_file1.csv', row.names = FALSE)
+write.csv(unique_file2, 'unique_file2.csv', row.names = FALSE)
+
+print("Files created: 'common_genes.csv', 'unique_file1.csv', and 'unique_file2.csv'")
+
+library(VennDiagram)
+
+# Extract the gene names as sets
+genes_file1 <- file1$gene
+genes_file2 <- file2$gene
+
+# Plot Venn diagram
+venn.plot <- venn.diagram(
+  x = list(File1 = genes_file1, File2 = genes_file2),
+  category.names = c("File 1", "File 2"),
+  col = "transparent",
+  fill = c("cornflowerblue", "green"),
+  filename = NULL, 
+  output=TRUE
+)
+
+grid.draw(venn.plot)
